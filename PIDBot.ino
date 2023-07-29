@@ -214,12 +214,12 @@ void setup() {
 
 void loop() {
   float vt = 100;
-  if ((currT - startTimer) < 40*1000000){
+  if ((currT - startTimer) < 30*1000000){
     
     calcRPM();
 
     // //set a target
-     //vt = 100 *(sin(currT/1e6)>0)+100;
+     vt = 100 *(sin(currT/1e6)>0)+100;
     
     int pwr_l = 0;
     int dir_l = 1;
