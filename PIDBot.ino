@@ -49,29 +49,19 @@ const float ticksPerCm = ticksPerRev/circumference;
 long startTimer = micros();
 
 void ISR_R() {
-
-
-
   if (digitalRead(ENCR_CLK) == digitalRead(ENCR_Dt)) {
     MOTR_ENC_CNT++;
   } else {
     MOTR_ENC_CNT--;
   }
-
-
 }
 
 void ISR_L() {
-
-
-
   if (digitalRead(ENCL_CLK) == digitalRead(ENCL_Dt)) {
     MOTL_ENC_CNT--;
   } else {
     MOTL_ENC_CNT++;
   }
-
-
 }
 
 void initRobot(){
@@ -126,8 +116,6 @@ void setMotorL(int dir, int speed){
 void stop(){
     setMotorR(0,0);
     setMotorL(0,0);
-
-
 }
 
 int CMtoTicks(int cm) {
@@ -203,14 +191,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(ENCR_CLK), ISR_R, RISING);
   attachInterrupt(digitalPinToInterrupt(ENCL_CLK), ISR_L, RISING);
 
-  
-
 }
-
-
-
-
-
 
 void loop() {
   float vt = 100;
@@ -223,12 +204,12 @@ void loop() {
     
     int pwr_l = 0;
     int dir_l = 1;
-    PID_L(vt, RPM_L, &pwr_l, &dir_l);
+    PID_L(100, RPM_L, &pwr_l, &dir_l);
     setMotorL(dir_l, pwr_l);
 
     int pwr_r = 0;
     int dir_r = 1;
-    PID_R(vt, RPM_R, &pwr_r, &dir_r);
+    PID_R(50, RPM_R, &pwr_r, &dir_r);
     setMotorR(dir_r, pwr_r);
   }else{
     stop();
