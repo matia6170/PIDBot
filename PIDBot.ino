@@ -49,29 +49,19 @@ const float ticksPerCm = ticksPerRev/circumference;
 long startTimer = micros();
 
 void ISR_R() {
-
-
-
   if (digitalRead(ENCR_CLK) == digitalRead(ENCR_Dt)) {
     MOTR_ENC_CNT++;
   } else {
     MOTR_ENC_CNT--;
   }
-
-
 }
 
 void ISR_L() {
-
-
-
   if (digitalRead(ENCL_CLK) == digitalRead(ENCL_Dt)) {
     MOTL_ENC_CNT--;
   } else {
     MOTL_ENC_CNT++;
   }
-
-
 }
 
 void initRobot(){
@@ -153,6 +143,7 @@ void calcRPM(){
   prevT = currT;
 }
 
+//PID fix derivative Term!!
 void PID_L(float vt, float rpm, int *pwr, int *dir){
   float kp = 1;
   float ki = 10;
