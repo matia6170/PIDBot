@@ -41,8 +41,14 @@ float prevE_L = 0;
 float eintegral_R = 0;
 float prevE_R = 0;
 
+//cascading
+float eintegral_DL = 0;
+float prevE_DL = 0;
+float eintegral_DR = 0;
+float prevE_DR = 0;
+
 /* Physical Properties of the Robot */
-const int circumference = 70;
+const int circumference = 2*3.14*3.5;
 const int ticksPerRev = 400;
 const float ticksPerCm = ticksPerRev/circumference;
 
@@ -118,7 +124,7 @@ void stop(){
     setMotorL(0,0);
 }
 
-int CMtoTicks(int cm) {
+int CMToTicks(int cm) {
   return ticksPerCm * cm;
 }
 
@@ -163,15 +169,17 @@ void PID_L(float vt, float rpm, int *pwr, int *dir){
   
 }
 void PID_R(float vt, float rpm, int *pwr, int *dir){
-  float kp = 1;
+  float kp = 2;
   float ki = 10;
-  float kd = 0.05;
+  float kd = 0.01;
 
   float e = vt-rpm;
 
   eintegral_R = eintegral_R + e * deltaT;
 
-  float u = kp*e + kd*prevE_R + ki*eintegral_R;
+  float eDeriv = ((abs(prevE_R)-abs(e))/deltaT);
+
+  float u = kp*e + kd*eDeriv + ki*eintegral_R;
 
   prevE_R = e;
 
@@ -184,6 +192,52 @@ void PID_R(float vt, float rpm, int *pwr, int *dir){
   
 }
 
+float rpmLimit=100;
+void PID_DL(float target, float *rpmOut){
+  float kp = 0.7;
+  float ki = 0.001;
+  float kd = 0.01;
+
+  float e = target-MOTL_ENC_CNT;
+
+  eintegral_DL = eintegral_DL + e * deltaT;
+
+  float eDeriv = ((abs(e)-abs(prevE_DL))/deltaT);
+
+  float u = kp*e + kd*eDeriv + ki*eintegral_DL;
+
+  prevE_DL = e;
+
+  *rpmOut = u;
+  if(*rpmOut>rpmLimit)
+    *rpmOut = rpmLimit;
+  else if(*rpmOut<-rpmLimit)
+    *rpmOut=-rpmLimit;
+  
+}
+void PID_DR(float target, float *rpmOut){
+  float kp = 0.7;
+  float ki = 0.001;
+  float kd = 0.01;
+
+  float e = target-MOTR_ENC_CNT;
+
+  eintegral_DR = eintegral_DR + e * deltaT;
+
+  float eDeriv = ((abs(e)-abs(prevE_DR))/deltaT);
+
+  float u = kp*e + kd*eDeriv + ki*eintegral_DR;
+
+  prevE_DR = e;
+
+  *rpmOut = u;
+  if(*rpmOut>rpmLimit)
+    *rpmOut = rpmLimit;
+  else if(*rpmOut<-rpmLimit)
+    *rpmOut=-rpmLimit;
+  
+}
+
 void setup() {
 
   initRobot();
@@ -193,50 +247,72 @@ void setup() {
 
 }
 
+long CURRENT_TIME = millis();
+long PAST_TIME = millis();
+
+float target_rpm_L=0;
+float target_rpm_R=0;
+
+float targetDist = CMToTicks(50);
 void loop() {
-  float vt = 100;
-  if ((currT - startTimer) < 30*1000000){
+
+  CURRENT_TIME=millis();
+  long DT;
+
+  
+  if ((currT - startTimer) < 10*1000000){
     
     calcRPM();
 
     // //set a target
-     vt = 100 *(sin(currT/1e6)>0)+100;
+    //vt = 200 *(sin(currT/1e6)>0)-100;
+    //vt=150*sin(currT/1e6);
     
     int pwr_l = 0;
     int dir_l = 1;
-    PID_L(100, RPM_L, &pwr_l, &dir_l);
+    PID_L(target_rpm_L, RPM_L, &pwr_l, &dir_l);
     setMotorL(dir_l, pwr_l);
 
     int pwr_r = 0;
     int dir_r = 1;
-    PID_R(50, RPM_R, &pwr_r, &dir_r);
+    PID_R(target_rpm_R, RPM_R , &pwr_r, &dir_r);
     setMotorR(dir_r, pwr_r);
+
+
+    //Cascading PID
+    DT=CURRENT_TIME-PAST_TIME;
+    if(DT>100){
+
+      PID_DR(targetDist, &target_rpm_R);
+      PID_DL(targetDist, &target_rpm_L);
+
+
+      PAST_TIME=CURRENT_TIME;
+
+    }
+
   }else{
     stop();
   }
 
 
+  // Serial.print("dealtaT: ");
+  // Serial.print(DT);
 
 
-  Serial.print("0 ");
-  Serial.print("300 ");
-  Serial.print(vt);
+  // Serial.print("2100 1500 ");
+  // Serial.print(vt);
+  // Serial.print(" ");
+  Serial.print(targetDist);
   Serial.print(" ");
-  Serial.print(RPM_L);
+  Serial.print(MOTL_ENC_CNT);
   Serial.print(" ");
-  Serial.print(RPM_R);
+  Serial.print(MOTR_ENC_CNT);
   Serial.println("");
 
 
 
-
-  // currT = millis();
-  // if(currT - start > 2000){
-  //   analogWrite(MOTR_FW, 0);
-  //   analogWrite(MOTL_FW, 0);
-  // }
-
   
-    
+
 
 }
