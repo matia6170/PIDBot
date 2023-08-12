@@ -210,7 +210,7 @@ void loop() {
 
     int pwr_r = 0;
     int dir_r = 1;
-    PID_R(50, RPM_R, &pwr_r, &dir_r);
+    PID_R(120, RPM_R, &pwr_r, &dir_r);
     setMotorR(dir_r, pwr_r);
   }else{
     stop();
